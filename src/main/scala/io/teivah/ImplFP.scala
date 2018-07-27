@@ -1,26 +1,48 @@
 package io.teivah
 
+import scalaz.Scalaz._
+import scalaz._
+
 object ImplFP {
-  def parsePerson(input: String): Either[String, PersonB] = {
+  def users = List(
+    "bob ross;+33620220221",
+    "foo bar;+31620220220"
+  )
+
+  private def emit(): Seq[String] = users
+
+  private def go(emit: () => Seq[String]) = emit.apply().foreach(println)
+
+  def parseUser(input: String): ParsingException \/ UserB = {
     val split = input.split(";")
-    if (split.length != 2) return Left("Bad format")
+    if (split.length != 2) return -\/(new ParsingException("Bad format"))
 
-    Left("")
+    val person = parsePerson(split(0))
+    val phone = parsePhone(split(1))
+
+    (person |@| phone) (UserB)
   }
 
-  def enrichNameLastName(input: String): Either[ParsingException, (String, String)] = {
+  private def parsePerson(input: String): ParsingException \/ PersonB = {
     val split = input.split(" ")
-    if (split.length != 2) return Left(new ParsingException("Bad format"))
+    if (split.length != 2) return -\/(new ParsingException("Bad format"))
 
-    return Right(split(0), split(1))
+    \/-(PersonB(split(0), split(1)))
   }
 
-  def enrichPhone(input: String): Either[ParsingException, String] = {
-    val regex = "^0\\d{9}$".r
+  private def parsePhone(input: String): ParsingException \/ PhoneB = {
+    val regex = "^\\+(\\d{2})(\\d{9})$".r
 
-    "with a " match {
-      case regex(_) => Right(input)
-      case _ => Left(new ParsingException("Bad format"))
+    input match {
+      case regex(indicative, phoneNumber) => \/-(PhoneB(indicative, phoneNumber))
+      case _ => -\/(new ParsingException("Bad format"))
     }
+  }
+
+
+  def main(args: Array[String]): Unit = {
+    val p = parseUser("bob ross;+33620220221")
+    println(p)
+    //    go(emit)
   }
 }

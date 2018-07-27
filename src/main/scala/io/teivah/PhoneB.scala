@@ -1,5 +1,4 @@
 package io.teivah
 
-class PhoneB {
-
-}
+case class PhoneB(indicative: String,
+                  phoneNumber: String)

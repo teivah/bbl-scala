@@ -1,5 +1,4 @@
 package io.teivah
 
-class UserB {
-
-}
+case class UserB(person: PersonB,
+                 phoneNumber: PhoneB)
