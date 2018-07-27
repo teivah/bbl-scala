@@ -3,15 +3,26 @@ package io.teivah
 import scalaz.Scalaz._
 import scalaz._
 
+import scala.io.Source
+
 object ImplFP {
-  def users = List(
-    "bob ross;+33620220221",
-    "foo bar;+31620220220"
-  )
 
-  private def emit(): Seq[String] = users
+  private def getConfigUsers(config: Config)(threshold: Int): Seq[String] = {
+    // Get iterator on file lines
+    val it = Source.fromFile(config.usersFile).getLines()
 
-  private def go(emit: () => Seq[String]) = emit.apply().foreach(println)
+    // Get n first lines
+    val lines =
+      for {
+        i <- 0 until threshold
+      } yield it.next()
+
+    lines
+      .toList
+  }
+
+  private def getConfigUsers(threshold: Int, f: (Int) => Seq[String]) =
+    f.apply(threshold)
 
   def parseUser(input: String): ParsingException \/ UserB = {
     val split = input.split(";")
@@ -20,6 +31,7 @@ object ImplFP {
     val person = parsePerson(split(0))
     val phone = parsePhone(split(1))
 
+    // Applicative pattern
     (person |@| phone) (UserB)
   }
 
@@ -40,9 +52,12 @@ object ImplFP {
   }
 
 
-  def main(args: Array[String]): Unit = {
-    val p = parseUser("bob ross;+33620220221")
-    println(p)
-    //    go(emit)
+  def main(args: Array[String]) = {
+    //    val p = parseUser("bob ross;+33620220221")
+    val config = Config("src/main/resources/users.csv")
+    val partialConfigFunction: Int => Seq[String] = getConfigUsers(config)
+
+    val strings = getConfigUsers(5, partialConfigFunction)
+    println(s"$strings")
   }
 }
