@@ -1,50 +1,53 @@
 package io.teivah;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ImplOO {
-	public List<PersonA> parsePerson(final List<String> inputs) throws ParsingException {
-		final List<PersonA> list = new ArrayList<>();
-
-		for (final String input : inputs) {
-			final String[] split = input.split(";");
-			if (split.length != 2) {
-				throw new ParsingException("Bad format");
-			}
-
-			final PersonA p = new PersonA();
-			try {
-				enrichNameAndLastName(p, split[0]);
-				enrichPhone(p, split[1]);
-				list.add(p);
-			} catch (final Exception e) {
-				// Log something
-				throw e;
-			}
+	public UserA parseUser(final String input) throws ParsingException {
+		final String[] split = input.split(";");
+		if (split.length != 2) {
+			throw new ParsingException("Bad format");
 		}
 
-		return list;
+		try {
+			final PersonA person = parsePerson(split[0]);
+			final PhoneA phone = parsePhone(split[1]);
+			return new UserA(person, phone);
+		} catch (final Exception e) {
+			// Log something
+			throw e;
+		}
 	}
 
-	public void enrichNameAndLastName(final PersonA p,
-									  final String input) throws ParsingException {
+	private PersonA parsePerson(final String input) throws ParsingException {
 		final String[] split = input.split(" ");
 		if (split.length != 2) {
 			throw new ParsingException("Bad format");
 		}
 
-		p.setName(split[0]);
-		p.setLastName(split[1]);
+		return new PersonA(split[0], split[1]);
 	}
 
-	public void enrichPhone(final PersonA p,
-							final String input) throws ParsingException {
-		if (input.matches("^0\\d{9}$")) {
-			p.setPhone(input);
-		} else {
+	private PhoneA parsePhone(final String input) throws ParsingException {
+		final String regex = "^\\+(\\d{2})(\\d{9})$";
+		final Pattern pattern = Pattern.compile(regex);
+		final Matcher matcher = pattern.matcher(input);
+
+		if (!matcher.find()) {
 			throw new ParsingException("Bad format");
 		}
 
+		return new PhoneA(matcher.group(0), matcher.group(1));
+	}
+
+	public static void main(final String[] args) {
+		try {
+			final UserA user = new ImplOO().parseUser("bob ross;+33620220221");
+			System.out.println(user.getPhoneNumber().getPhoneNumber());
+		} catch (final ParsingException e) {
+			// Do something
+			e.printStackTrace();
+		}
 	}
 }
